@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">DiskWala</string>
+    <string name="tagline_cloud_hub">1 TB Cloud Drive • 4K Direct Video Stream • Instant Link Share</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="sign_in_subtitle">Sign in with your Google account to sync your cloud drive, stream 4K videos without waiting for downloads, and open shared DiskWala links.</string>
+    <string name="nav_drive">Cloud Drive</string>
+    <string name="nav_cinema">Video Stream</string>
+    <string name="nav_links">Share Links</string>
+    <string name="nav_transfers">Transfers</string>
+    <string name="nav_vault">Vault &amp; Space</string>
+    <string name="action_upload_media">Upload Photo / Video</string>
+    <string name="action_upload_doc">Upload Document / File</string>
+    <string name="action_new_folder">New Folder</string>
+    <string name="action_open_link">Open Shared Link</string>
+    <string name="search_files_hint">Search cloud files, 4K movies, folders, tags…</string>
+    <string name="empty_folder_title">This folder is empty</string>
+    <string name="empty_folder_subtitle">Tap + to upload photos, videos, or documents from your device or create a new folder.</string>
+    <string name="turbo_badge">TURBO 4K</string>
+    <string name="sign_out">Sign Out</string>
+</resources>

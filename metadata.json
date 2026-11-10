@@ -1,0 +1,6 @@
+{
+  "name": "DiskWala",
+  "description": "Cloud drive, video streaming player, and secure file link sharing hub.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

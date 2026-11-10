@@ -1,0 +1,252 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // 1. Validation Blueprint: CloudFile (/files/{fileId})
+    function isValidCloudFile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
+             data.category is string && data.category in ['video', 'photo', 'document', 'audio', 'archive', 'folder'] &&
+             data.mimeType is string && data.mimeType.size() >= 1 && data.mimeType.size() <= 100 &&
+             data.sizeBytes is int && data.sizeBytes >= 0 && data.sizeBytes <= 1099511627776 &&
+             data.parentFolderId is string && data.parentFolderId.size() >= 1 && data.parentFolderId.size() <= 128 &&
+             data.folderPath is string && data.folderPath.size() >= 1 && data.folderPath.size() <= 300 &&
+             data.streamUrl is string && data.streamUrl.size() <= 1000 &&
+             data.thumbnailKey is string && data.thumbnailKey.size() <= 200 &&
+             data.durationSec is int && data.durationSec >= 0 && data.durationSec <= 864000 &&
+             data.resolution is string && data.resolution.size() <= 40 &&
+             data.playbackPositionSec is int && data.playbackPositionSec >= 0 && data.playbackPositionSec <= 864000 &&
+             data.isStarred is bool &&
+             data.isTrashed is bool &&
+             data.isVaultLocked is bool &&
+             data.isOfflineAvailable is bool &&
+             data.tags is list && data.tags.size() <= 10 &&
+             (data.tags.size() == 0 || (data.tags[0] is string && data.tags[0].size() <= 40)) &&
+             data.shareCode is string && data.shareCode.size() <= 64 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /files/{fileId} {
+      allow get: if isSignedIn() && isValidId(fileId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(fileId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'name', 'category', 'mimeType', 'sizeBytes',
+                         'parentFolderId', 'folderPath', 'streamUrl', 'thumbnailKey',
+                         'durationSec', 'resolution', 'playbackPositionSec',
+                         'isStarred', 'isTrashed', 'isVaultLocked', 'isOfflineAvailable',
+                         'tags', 'shareCode', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'name', 'category', 'mimeType', 'sizeBytes',
+                         'parentFolderId', 'folderPath', 'streamUrl', 'thumbnailKey',
+                         'durationSec', 'resolution', 'playbackPositionSec',
+                         'isStarred', 'isTrashed', 'isVaultLocked', 'isOfflineAvailable',
+                         'tags', 'shareCode', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidCloudFile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(fileId) &&
+                       isValidCloudFile(incoming()) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'name', 'parentFolderId', 'folderPath', 'playbackPositionSec',
+                         'isStarred', 'isTrashed', 'isVaultLocked', 'isOfflineAvailable',
+                         'tags', 'shareCode', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(fileId) && existing().userId == request.auth.uid;
+    }
+
+    // 2. Validation Blueprint: SharedLink (/shared_links/{linkId})
+    function isValidSharedLink(data) {
+      return data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+             data.ownerHandle is string && data.ownerHandle.size() >= 1 && data.ownerHandle.size() <= 80 &&
+             data.fileId is string && data.fileId.size() >= 1 && data.fileId.size() <= 128 &&
+             data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 200 &&
+             data.category is string && data.category in ['video', 'photo', 'document', 'audio', 'archive', 'folder'] &&
+             data.mimeType is string && data.mimeType.size() >= 1 && data.mimeType.size() <= 100 &&
+             data.sizeBytes is int && data.sizeBytes >= 0 && data.sizeBytes <= 1099511627776 &&
+             data.streamUrl is string && data.streamUrl.size() <= 1000 &&
+             data.thumbnailKey is string && data.thumbnailKey.size() <= 200 &&
+             data.durationSec is int && data.durationSec >= 0 && data.durationSec <= 864000 &&
+             data.resolution is string && data.resolution.size() <= 40 &&
+             data.allowDownload is bool &&
+             data.accessPin is string && data.accessPin.size() <= 16 &&
+             data.isActive is bool &&
+             data.viewsCount is int && data.viewsCount >= 0 && data.viewsCount <= 1000000000 &&
+             data.savesCount is int && data.savesCount >= 0 && data.savesCount <= 1000000000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /shared_links/{linkId} {
+      // Owner can always get their link; any signed-in user can open a specific active share link by ID
+      allow get: if isSignedIn() && isValidId(linkId) &&
+                    (existing().ownerId == request.auth.uid || existing().isActive == true);
+      // Listing shared links is strictly scoped to the link owner
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(linkId) &&
+                       incoming().ownerId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'ownerId', 'ownerHandle', 'fileId', 'fileName', 'category',
+                         'mimeType', 'sizeBytes', 'streamUrl', 'thumbnailKey',
+                         'durationSec', 'resolution', 'allowDownload', 'accessPin',
+                         'isActive', 'viewsCount', 'savesCount', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'ownerId', 'ownerHandle', 'fileId', 'fileName', 'category',
+                         'mimeType', 'sizeBytes', 'streamUrl', 'thumbnailKey',
+                         'durationSec', 'resolution', 'allowDownload', 'accessPin',
+                         'isActive', 'viewsCount', 'savesCount', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidSharedLink(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(linkId) &&
+                       isValidSharedLink(incoming()) &&
+                       incoming().ownerId == existing().ownerId &&
+                       incoming().createdAt == existing().createdAt && (
+                         // Action 1: Owner updating link settings or counters
+                         (existing().ownerId == request.auth.uid &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'allowDownload', 'accessPin', 'isActive', 'viewsCount', 'savesCount', 'updatedAt'
+                          ])) ||
+                         // Action 2: Authenticated recipient incrementing views/saves on an active shared link
+                         (existing().isActive == true &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'viewsCount', 'savesCount', 'updatedAt'
+                          ]))
+                       );
+
+      allow delete: if isSignedIn() && isValidId(linkId) && existing().ownerId == request.auth.uid;
+    }
+
+    // 3. Validation Blueprint: TransferTask (/transfers/{transferId})
+    function isValidTransferTask(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.fileId is string && data.fileId.size() >= 1 && data.fileId.size() <= 128 &&
+             data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 200 &&
+             data.category is string && data.category in ['video', 'photo', 'document', 'audio', 'archive'] &&
+             data.direction is string && data.direction in ['upload', 'download', 'cloud_save'] &&
+             data.totalBytes is int && data.totalBytes >= 0 && data.totalBytes <= 1099511627776 &&
+             data.transferredBytes is int && data.transferredBytes >= 0 && data.transferredBytes <= 1099511627776 &&
+             data.speedKbps is int && data.speedKbps >= 0 && data.speedKbps <= 10000000 &&
+             data.isTurboBoosted is bool &&
+             data.status is string && data.status in ['transferring', 'paused', 'completed', 'failed'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /transfers/{transferId} {
+      allow get: if isSignedIn() && isValidId(transferId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(transferId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'fileId', 'fileName', 'category', 'direction',
+                         'totalBytes', 'transferredBytes', 'speedKbps', 'isTurboBoosted',
+                         'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'fileId', 'fileName', 'category', 'direction',
+                         'totalBytes', 'transferredBytes', 'speedKbps', 'isTurboBoosted',
+                         'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidTransferTask(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(transferId) &&
+                       isValidTransferTask(incoming()) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'transferredBytes', 'speedKbps', 'isTurboBoosted', 'status', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(transferId) && existing().userId == request.auth.uid;
+    }
+
+    // 4. Validation Blueprint: UserStorageConfig (/user_configs/{userId})
+    function isValidUserStorageConfig(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.planTier is string && data.planTier in ['free', 'turbo_vip'] &&
+             data.quotaBytes is int && data.quotaBytes >= 0 && data.quotaBytes <= 109951162777600 &&
+             data.vaultPinHash is string && data.vaultPinHash.size() <= 64 &&
+             data.defaultStreamQuality is string && data.defaultStreamQuality in ['auto', '720p', '1080p', '4k_original'] &&
+             data.autoBackupVideos is bool &&
+             data.telegramLinkSync is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /user_configs/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll([
+                         'userId', 'planTier', 'quotaBytes', 'vaultPinHash',
+                         'defaultStreamQuality', 'autoBackupVideos', 'telegramLinkSync',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'planTier', 'quotaBytes', 'vaultPinHash',
+                         'defaultStreamQuality', 'autoBackupVideos', 'telegramLinkSync',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserStorageConfig(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidUserStorageConfig(incoming()) &&
+                       request.auth.uid == userId &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'planTier', 'quotaBytes', 'vaultPinHash',
+                         'defaultStreamQuality', 'autoBackupVideos', 'telegramLinkSync',
+                         'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+  }
+}

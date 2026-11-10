@@ -1,0 +1,368 @@
+{
+  "entities": {
+    "CloudFile": {
+      "title": "CloudFile",
+      "description": "Represents a file or folder stored in the user's DiskWala cloud drive, supporting folder hierarchy, video streaming playback resume, vault lock, offline caching, and link sharing.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the file owner matching request.auth.uid"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the file or folder (1-200 chars)"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["video", "photo", "document", "audio", "archive", "folder"],
+          "description": "File category classification"
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "MIME type string (e.g., video/mp4, application/pdf, inode/directory)"
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "description": "File size in bytes"
+        },
+        "parentFolderId": {
+          "type": "string",
+          "description": "ID of the parent folder or 'root'"
+        },
+        "folderPath": {
+          "type": "string",
+          "description": "Human-readable folder breadcrumb path (e.g., '/Movies & 4K')"
+        },
+        "streamUrl": {
+          "type": "string",
+          "description": "Direct stream URL or content URI for video/audio playback"
+        },
+        "thumbnailKey": {
+          "type": "string",
+          "description": "Thumbnail identifier or poster key"
+        },
+        "durationSec": {
+          "type": "integer",
+          "description": "Media duration in seconds (0 for non-media)"
+        },
+        "resolution": {
+          "type": "string",
+          "description": "Video resolution badge (e.g., '4K 2160p HDR', '1080p FHD')"
+        },
+        "playbackPositionSec": {
+          "type": "integer",
+          "description": "Last saved playback position in seconds for cloud streaming resume"
+        },
+        "isStarred": {
+          "type": "boolean",
+          "description": "Whether the file is starred/favorited"
+        },
+        "isTrashed": {
+          "type": "boolean",
+          "description": "Whether the file is in the Recycle Bin"
+        },
+        "isVaultLocked": {
+          "type": "boolean",
+          "description": "Whether the file is stored in the encrypted Private Vault"
+        },
+        "isOfflineAvailable": {
+          "type": "boolean",
+          "description": "Whether the file is cached locally for offline access"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Up to 10 string tags for organizing files"
+        },
+        "shareCode": {
+          "type": "string",
+          "description": "Active share link ID if shared, or empty string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when last updated (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "category",
+        "mimeType",
+        "sizeBytes",
+        "parentFolderId",
+        "folderPath",
+        "streamUrl",
+        "thumbnailKey",
+        "durationSec",
+        "resolution",
+        "playbackPositionSec",
+        "isStarred",
+        "isTrashed",
+        "isVaultLocked",
+        "isOfflineAvailable",
+        "tags",
+        "shareCode",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SharedLink": {
+      "title": "SharedLink",
+      "description": "Represents an instant shareable DiskWala link for a file or folder with custom access permissions, optional PIN lock, and view/save analytics.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the user who created the share link"
+        },
+        "ownerHandle": {
+          "type": "string",
+          "description": "Public handle/display name of the sharer (non-PII)"
+        },
+        "fileId": {
+          "type": "string",
+          "description": "Source CloudFile document ID"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Shared file name"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["video", "photo", "document", "audio", "archive", "folder"],
+          "description": "Shared item category"
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "MIME type of the shared item"
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "description": "Size of the shared file in bytes"
+        },
+        "streamUrl": {
+          "type": "string",
+          "description": "Streamable media URL for instant cloud preview"
+        },
+        "thumbnailKey": {
+          "type": "string",
+          "description": "Thumbnail key for preview card"
+        },
+        "durationSec": {
+          "type": "integer",
+          "description": "Media duration in seconds"
+        },
+        "resolution": {
+          "type": "string",
+          "description": "Resolution label for shared video"
+        },
+        "allowDownload": {
+          "type": "boolean",
+          "description": "Whether recipients are allowed to save/download the file"
+        },
+        "accessPin": {
+          "type": "string",
+          "description": "Optional 4-digit PIN code or empty string for public link"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether the link is active or revoked"
+        },
+        "viewsCount": {
+          "type": "integer",
+          "description": "Number of times the link was opened/streamed"
+        },
+        "savesCount": {
+          "type": "integer",
+          "description": "Number of times the file was saved to another DiskWala drive"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when link was generated (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when link was last updated (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": [
+        "ownerId",
+        "ownerHandle",
+        "fileId",
+        "fileName",
+        "category",
+        "mimeType",
+        "sizeBytes",
+        "streamUrl",
+        "thumbnailKey",
+        "durationSec",
+        "resolution",
+        "allowDownload",
+        "accessPin",
+        "isActive",
+        "viewsCount",
+        "savesCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TransferTask": {
+      "title": "TransferTask",
+      "description": "Represents an upload, download, or cloud-save transfer task in the user's Transfer Center with Turbo high-speed channel status.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the user owning the transfer"
+        },
+        "fileId": {
+          "type": "string",
+          "description": "Associated CloudFile ID"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "File name being transferred"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["video", "photo", "document", "audio", "archive"],
+          "description": "File category"
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["upload", "download", "cloud_save"],
+          "description": "Transfer direction"
+        },
+        "totalBytes": {
+          "type": "integer",
+          "description": "Total bytes to transfer"
+        },
+        "transferredBytes": {
+          "type": "integer",
+          "description": "Bytes transferred so far"
+        },
+        "speedKbps": {
+          "type": "integer",
+          "description": "Current transfer speed in KB/s"
+        },
+        "isTurboBoosted": {
+          "type": "boolean",
+          "description": "Whether high-speed Turbo channel is active"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["transferring", "paused", "completed", "failed"],
+          "description": "Current transfer status"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when transfer started (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when transfer updated (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": [
+        "userId",
+        "fileId",
+        "fileName",
+        "category",
+        "direction",
+        "totalBytes",
+        "transferredBytes",
+        "speedKbps",
+        "isTurboBoosted",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserStorageConfig": {
+      "title": "UserStorageConfig",
+      "description": "Stores per-user cloud storage quota, Turbo tier status, Private Vault PIN hash, and playback preferences.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the user matching document ID"
+        },
+        "planTier": {
+          "type": "string",
+          "enum": ["free", "turbo_vip"],
+          "description": "Current storage subscription plan tier"
+        },
+        "quotaBytes": {
+          "type": "integer",
+          "description": "Total cloud storage quota in bytes"
+        },
+        "vaultPinHash": {
+          "type": "string",
+          "description": "4-digit PIN code for Private Safe Vault"
+        },
+        "defaultStreamQuality": {
+          "type": "string",
+          "enum": ["auto", "720p", "1080p", "4k_original"],
+          "description": "Preferred video streaming resolution"
+        },
+        "autoBackupVideos": {
+          "type": "boolean",
+          "description": "Whether automatic camera roll video backup is enabled"
+        },
+        "telegramLinkSync": {
+          "type": "boolean",
+          "description": "Whether instant deep-link capture for shared links is enabled"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when config was initialized (FieldValue.serverTimestamp())"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when config was updated (FieldValue.serverTimestamp())"
+        }
+      },
+      "required": [
+        "userId",
+        "planTier",
+        "quotaBytes",
+        "vaultPinHash",
+        "defaultStreamQuality",
+        "autoBackupVideos",
+        "telegramLinkSync",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/files/{fileId}": {
+      "schema": { "$ref": "#/entities/CloudFile" },
+      "description": "Root collection of user cloud files and folders, isolated by userId"
+    },
+    "/shared_links/{linkId}": {
+      "schema": { "$ref": "#/entities/SharedLink" },
+      "description": "Root collection of shareable DiskWala file links"
+    },
+    "/transfers/{transferId}": {
+      "schema": { "$ref": "#/entities/TransferTask" },
+      "description": "Root collection of upload, download, and cloud-save transfer tasks, isolated by userId"
+    },
+    "/user_configs/{userId}": {
+      "schema": { "$ref": "#/entities/UserStorageConfig" },
+      "description": "Per-user storage quota, Turbo plan, and vault configuration keyed by userId"
+    }
+  }
+}
